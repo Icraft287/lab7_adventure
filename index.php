@@ -1,20 +1,26 @@
-<?php 
+<?php
 
-      /*
-          TO DO:
-            1. Check if a cookie for the user's name exists.
-              - If it exists, store its value in a variable.
-              - If it does not exist, set the variable to an empty string.
-              
-            2. Check if the form was submitted.
-              - If so:
-                a. Get the user's name from the submitted form data.
-                b. Store it in a cookie so we can use it on other pages.
-                c. Redirect the user to the first page of the adventure:
-                      - Go to "adventure.php" and set the name/value pair for the first page in the URL. 
-                d. Use exit() after the redirect to stop the script from continuing.
-      */
-     
+    // 1. Check if a cookie for the user's name exists
+    //    - If it exists, store its value in $name
+    //    - If it does not exist, set $name to an empty string
+    $name = isset($_COOKIE['user_name']) ? $_COOKIE['user_name'] : '';
+
+    // 2. Check if the form was submitted
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+        // a. Get the user's name from the submitted form data
+        $name = $_POST['user_name'];
+
+        // b. Store it in a cookie so we can use it on other pages
+        setcookie('user_name', $name, time() + (86400 * 30), '/');
+
+        // c. Redirect the user to the first page of the adventure
+        header('Location: adventure.php?page=beginning&name=' . urlencode($name));
+
+        // d. Stop the script from continuing
+        exit();
+    }
+
 ?>
 
 <!-- DO NOT MAKE ANY CHANGES TO THE FOLLOWING HTML CODE! -->
@@ -33,7 +39,7 @@
     <div class="container" id="intro">
       <!-- Introduction text for the user -->
       <h1>Welcome to the Quest!</h1>
-      <p>You’re about to embark on a wild journey. But first… what should we call you?</p>
+      <p>You're about to embark on a wild journey. But first… what should we call you?</p>
 
       <!-- Form to collect the user's name -->
       <form id="startForm" method="POST" action="index.php">

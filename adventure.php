@@ -1,84 +1,113 @@
-<?php 
+<?php
+    // 1. Get user's name from cookie, default to 'Traveler' if not set
+    $name = isset($_COOKIE['user_name']) ? $_COOKIE['user_name'] : 'Traveler';
 
-    /*
-          TO DO:
-            1. Check if a cookie for the user's name exists.
-              - If it exists, store its value in a variable.
-              - If it does not exist, set the variable to a placeholder name to use in your story.
-              
-            2. Get the current page number from the query string. 
-              - If it exists, store its value in a variable.
-              - If it does not exist, set the variable to an empty string.
+    // 2. Get current page and choice from query string
+    $page   = isset($_GET['page'])   ? $_GET['page']   : '';
+    $choice = isset($_GET['choice']) ? $_GET['choice'] : '';
 
-            3. Get the user's choice number from the query string. 
-              - If it exists, store its value in a variable.
-              - If it does not exist, set the variable to an empty string.
+    // 3. Create associative arrays for each part of the story
+    $beginning = [
+        'title'       => 'The Mysterious Forest',
+        'description' => "Welcome, $name! You find yourself at the edge of a mysterious forest. Do you dare to enter?",
+        'choices'     => ['Enter the forest', 'Walk away']
+    ];
 
-            4. Create an associative array for the BEGINNING of your story:
-              - Include a title for the first part of the story. 
-              - Add a description that uses the user's name.
-              - Include an indexed array with two choices to continue the story.
+    $middle = [
+        'title'       => 'The Enchanted Clearing',
+        'description' => ($choice === '1')
+            ? "As you step into the forest, $name, you discover an enchanted clearing filled with glowing flowers. Do you explore further or rest here?"
+            : "You decide to walk away, but as you turn around, $name, you find a hidden path leading to an enchanted clearing filled with glowing flowers. Do you explore further or rest here?",
+        'choices'     => ['Explore Further', 'Rest here']
+    ];
 
-            5. Create an associative array for the MIDDLE of your story:
-              - Include a title for the second part of the story. 
-              - Add two different descriptions (based on the user’s previous choice), each using the user's name.
-              - Include an indexed array with two choices to continue the story.
+    $ending = [
+        'title'       => 'The Journey\'s End',
+        'description' => ($choice === '1')
+            ? "You venture deeper into the clearing, $name, and uncover an ancient treasure hidden among the glowing flowers. Your curiosity has been rewarded!"
+            : "You rest among the glowing flowers, $name, and wake up feeling magical energy flow through you. The forest has blessed you with its gift.",
+        'choices'     => ['Play Again']
+    ];
 
-            6. Create an associative array for the ENDING of your story:
-              - Include a title for the final part of the story. 
-              - Add two different ending descriptions (based on the previous choice), using the user's name.
-              - Include an indexed array with ONE option — asking if the user wants to play again.
+    // 4. Conditional logic to assign correct section based on page
+    $title       = '';
+    $description = '';
+    $choices     = [];
+    $is_error    = false;
+    $is_ending   = false;
+    $next_page   = '';
 
-            7. Based on the page number and user’s choice:
-              - Use conditional statements to set general variables for:
-                - title
-                - description
-                - choices
-              - Increment the page number each time to move the story forward. 
-              
-            8. Handle errors or invalid input:
-              - If the page number or choice is missing or invalid:
-                - Set the title and description to an error message.
-                - Include an indexed array with ONE option — asking if the user wants to restart.
-      */
-     
+    if ($page === 'beginning') {
+        $title       = $beginning['title'];
+        $description = $beginning['description'];
+        $choices     = $beginning['choices'];
+        $next_page   = 'middle';
+
+    } elseif ($page === 'middle') {
+        $title       = $middle['title'];
+        $description = $middle['description'];
+        $choices     = $middle['choices'];
+        $next_page   = 'ending';
+
+    } elseif ($page === 'ending') {
+        $title       = $ending['title'];
+        $description = $ending['description'];
+        $choices     = $ending['choices'];
+        $is_ending   = true;
+
+    } else {
+        // Handle unexpected/missing page value
+        $is_error = true;
+    }
 ?>
 
 <!DOCTYPE html>
 <html>
-
   <head>
     <meta charset="UTF-8">
-    <title>Begin Your Adventure!</title>
+    <title>Your Adventure</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
 
   <body>
-    <div class="container" id="intro">
+    <div class="container" id="adventure">
 
-      <!-- TO DO: Display the title of the current story page. -->
-      <h1></h1>
+      <?php if ($is_error): ?>
+        <!-- Error/fallback state -->
+        <h1>Oops! Something went wrong.</h1>
+        <p>We couldn't find that part of the adventure.</p>
+        <a href="index.php"><button>Restart</button></a>
 
-      <!-- TO DO: Display the description of the current story page. -->
-      <p></p>
-      
-      <!-- TO DO: 
-              - Loop through the available story choices for the current story page. 
-                - If there's incorrect or missing data in the query string, show a restart button that redirects them back to index.php.
-                - Otherwise, display buttons for each story choice and link to the next page with the selected choice.
-      -->
-      <a href="index.php">
-        <button class="choice-btn"></button>
-      </a>
-           
-      <a href="adventure.php?page=">
-        <button class="choice-btn"></button>
-      </a>
+      <?php else: ?>
+        <!-- Dynamic story content -->
+        <h1><?= htmlspecialchars($title) ?></h1>
+        <p><?= htmlspecialchars($description) ?></p>
+
+        <!-- Loop through choices to build buttons -->
+        <?php foreach ($choices as $index => $choice_text): ?>
+          <?php $choice_num = $index + 1; ?>
+
+          <?php if ($is_ending): ?>
+            <!-- Ending: Play Again goes back to index.php -->
+            <a href="index.php">
+              <button><?= htmlspecialchars($choice_text) ?></button>
+            </a>
+
+          <?php else: ?>
+            <!-- Normal: go to next page with choice number in URL -->
+            <a href="adventure.php?page=<?= $next_page ?>&choice=<?= $choice_num ?>&name=<?= urlencode($name) ?>">
+              <button><?= htmlspecialchars($choice_text) ?></button>
+            </a>
+          <?php endif; ?>
+
+        <?php endforeach; ?>
+
+      <?php endif; ?>
+
     </div>
 
-    <!-- JavaScript file for animations -->
     <script src="js/animations.js"></script>
   </body>
 </html>
